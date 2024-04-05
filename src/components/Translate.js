@@ -1,6 +1,8 @@
-import React, { useEffect } from "react";
+import React, {useState, useEffect } from "react";
+import Tesseract from "tesseract.js";
 import countries from "../data";
 const Translate = () => {
+  const [text, setText] = useState("");
   useEffect(() => {
     const fromText = document.querySelector(".from-text");
     const toText = document.querySelector(".to-text");
@@ -25,6 +27,7 @@ const Translate = () => {
 
     exchageIcon.addEventListener("click", () => {
       console.log("helo");
+      console.log("Exchange icon clicked");
       let tempText = fromText.value;
       let tempLang = selectTag[0].value;
       console.log(tempText);
@@ -83,7 +86,45 @@ const Translate = () => {
         }
       });
     });
-  }, []);
+    const imageInput = document.getElementById("image-input");
+    const imagePreview = document.getElementById("image-preview");
+    const copyTextButton = document.getElementById("copy-text-button");
+
+    const handleImageUpload = (event) => {
+      const file = event.target.files[0];
+      showAlert("File uploaded successfully!");
+
+      Tesseract.recognize(file, "eng", { logger: (m) => console.log(m) }).then(
+        ({ data: { text } }) => {
+          setText(text);
+        }
+      );
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        imagePreview.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    };
+
+    const handleCopyText = () => {
+      if (text) {
+        navigator.clipboard.writeText(text);
+        showAlert("Text copied to clipboard!");
+      }
+    };
+    const showAlert = (message) => {
+      alert(message);
+    };
+
+    imageInput.addEventListener("change", handleImageUpload);
+    copyTextButton.addEventListener("click", handleCopyText);
+
+    return () => {
+      imageInput.removeEventListener("change", handleImageUpload);
+      copyTextButton.removeEventListener("click", handleCopyText);
+    };
+  }, [text]);
   return (
     <>
       <div className="container">
@@ -124,6 +165,18 @@ const Translate = () => {
         </div>
         <button>Translate Text</button>
       </div>
+      <input
+        id="image-input"
+        type="file"
+        accept="image/*"
+        style={{ display: "none" }}
+      />
+      <div>
+      <label htmlFor="image-input" className="image-input-label">
+        Upload Image
+      </label>
+      </div>
+      <button id="copy-text-button">Copy Text</button>
     </>
   );
 };
